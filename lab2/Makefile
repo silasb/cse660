@@ -1,7 +1,8 @@
 UNAME := $(SHELL uname)
 
 CC=gcc
-CFLAGS=-c -Wall
+CFLAGS=-c -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=gnu99
+LDFLAGS=-lpthread -lrt
 
 SOURCES=src/main.c src/buffer.c
 OBJECTS=$(SOURCES:.c=.o)

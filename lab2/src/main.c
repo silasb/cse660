@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "buffer.h"
 
+/* PROTOTYPES */
 void print_help();
-void print_buffer(buffer_t *);
 
 int main(int argc, char *argv[])
 {
@@ -12,16 +14,35 @@ int main(int argc, char *argv[])
     print_help();
     exit(0);
   }
-  int sleep = atoi(argv[1]);
+  int sleep_time = atoi(argv[1]);
   int n_producers = atoi(argv[2]);
   int n_consumers = atoi(argv[3]);
 
-  buffer_t buffer[BUFFER_SIZE];
-  buffer_t item = 2;
-  insert_item(buffer, item);
+  init_buffer();
+
   print_buffer(buffer);
 
-  printf("%i, %i, %i\n", sleep, n_producers, n_consumers);
+  int i = 0;
+  for(;i<n_producers;i++) {
+    pthread_t tid;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_create(&tid, &attr, producer, NULL);
+  }
+
+  i = 0;
+  for(;i<n_consumers;i++) {
+    pthread_t tid;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_create(&tid, &attr, consumer, NULL);
+  }
+
+  sleep(sleep_time);
+  print_buffer(buffer);
+
   return 0;
 }
 
@@ -31,11 +52,4 @@ void print_help()
       \t1. How long to sleep before terminating.\n\
       \t2. The number of producer threads.\n\
       \t3. The number of consumer threads.\n");
-}
-
-void print_buffer(buffer_t *buffer)
-{
-  int i = 0;
-  for(;i<=BUFFER_SIZE;i++)
-    printf("buffer[%i] = %i\n", i, buffer[i]);
 }
