@@ -8,7 +8,7 @@ EXECUTABLE=bin/lab3
 SOURCES=src/main.c
 OBJECTS=$(SOURCES:.c=.o)
 
-all: $(SOURCES) $(EXECUTABLE)
+all: create-bin $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
@@ -18,3 +18,8 @@ $(EXECUTABLE): $(OBJECTS)
 
 clean:
 	rm -rf src/*.o $(EXECUTABLE)
+
+create-bin:
+	mkdir -p bin
+
+.PHONY: create-bin all
