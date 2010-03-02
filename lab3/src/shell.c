@@ -25,95 +25,96 @@ void handle_SIGINT()
 
 int main(void)
 {
-    /*
-    points to a char *
-    [0] => { 'ls', '-l', '*' }
-    [1] => { 'ps', 'aux' }
-    .
-    .
-    .
-    [39] => { 'history' }
-    */
-    int i = 0;
-    for(;i < 40; i++)
-      old_commands[i] = (char **)malloc(sizeof(char *) * 80/2+1);
+  /*
+  points to a char *
+  [0] => { 'ls', '-l', '*' }
+  [1] => { 'ps', 'aux' }
+  .
+  .
+  .
+  [39] => { 'history' }
+  */
+  int i = 0;
+  for(;i < 40; i++)
+    old_commands[i] = (char **)malloc(sizeof(char *) * 80/2+1);
 
-    struct sigaction handler;
-    handler.sa_handler = handle_SIGINT;
-    sigaction(SIGINT, &handler, NULL);
+  struct sigaction handler;
+  handler.sa_handler = handle_SIGINT;
+  sigaction(SIGINT, &handler, NULL);
 
-    char inputBuffer[MAX_LINE]; /* buffer to hold the command entered */
-    int background;             /* equals 1 if a command is followed by '&' */
-    char *args[MAX_LINE/2+1];   /* command line (of 80) has max of 40 arguments */
-    char *cwd;
-    
-    /* Program terminates normally inside setup */
-    while (1)
-    {                  
-      background = 0;
-      if((cwd = getcwd(NULL, 64)) == NULL) {
-        perror("pwd");
-        exit(2);
+  char inputBuffer[MAX_LINE]; /* buffer to hold the command entered */
+  int background;             /* equals 1 if a command is followed by '&' */
+  char *args[MAX_LINE/2+1];   /* command line (of 80) has max of 40 arguments */
+  char *cwd;
+
+  /* Program terminates normally inside setup */
+  while (1)
+  {                  
+    background = 0;
+    if((cwd = getcwd(NULL, 64)) == NULL) {
+      perror("pwd");
+      exit(2);
+    }
+
+    printf("%s%% ", cwd);
+    fflush(0);
+    setup(inputBuffer, args, &background);       /* get next command */
+
+    // some reason it isn't getting copied
+    old_commands[history++] = args;
+    printf("%s\n", *old_commands[history-1]);
+
+    if(strcmp(args[0], "history") == 0)
+    {
+      int i = 0;
+      for(;i < history; i++) {
+        printf("[%d] ", i);
+        //int j = 0;
+        printf("%s\n", old_commands[i][0]);
+        /*
+        for(;j < (int)sizeof(old_commands[i]); j++) {
+          printf("%s ", old_commands[i][j]);
+          printf("\n");
+        }
+        */
       }
+    }
+    else if(strcmp(args[0], "exit") == 0)
+      exit(0);
 
-      printf("%s%% ", cwd);
-      fflush(0);
-      setup(inputBuffer, args, &background);       /* get next command */
+    pid_t pid;
 
-      // some reason it isn't getting copied
-      old_commands[history++] = args;
-      printf("%s\n", *old_commands[history-1]);
+    pid = fork();
 
-      if(strcmp(args[0], "history") == 0)
+    if(pid >= 0)
+    {
+      if(pid == 0)
       {
-        int i = 0;
-        for(;i < history; i++) {
-          printf("[%d] ", i);
-          //int j = 0;
-          printf("%s\n", old_commands[i][0]);
-          /*
-          for(;j < (int)sizeof(old_commands[i]); j++) {
-            printf("%s ", old_commands[i][j]);
-            printf("\n");
-          }
-          */
-        }
-      }
-      else if(strcmp(args[0], "exit") == 0)
-        exit(0);
-
-      pid_t pid;
-
-      pid = fork();
-
-      if(pid >= 0)
-      {
-        if(pid == 0)
-        {
-          int return_code = execvp(args[0], args);
-          if(return_code < 0)
-            printf("%s: command not found\n", args[0]);
-          _exit(return_code);
-        }
-        else
-        {
-          if(background == 0)
-            wait(NULL);
-            //waitpid(pid, NULL, NULL);
-        }
+        int return_code = execvp(args[0], args);
+        if(return_code < 0)
+          printf("%s: command not found\n", args[0]);
+        _exit(return_code);
       }
       else
       {
-        fprintf(stderr, "Fork failed");
-        exit(-1);
+        if(background == 0)
+          wait(NULL);
+        //waitpid(pid, NULL, NULL);
       }
-
-      /* the steps are:
-       (1) fork a child process using fork()
-       (2) the child process will invoke execvp()
-       (3) if background == 0, the parent will wait, 
-        otherwise returns to the setup() function. */
     }
+    else
+    {
+      fprintf(stderr, "Fork failed");
+      exit(-1);
+    }
+
+    /* the steps are:
+    (1) fork a child process using fork()
+    (2) the child process will invoke execvp()
+    (3) if background == 0, the parent will wait, 
+    otherwise returns to the setup() function. 
+    */
+  }
 }
 
 /**
