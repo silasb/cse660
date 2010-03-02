@@ -1,11 +1,11 @@
 UNAME := $(SHELL uname)
 
 CC=gcc
-CFLAGS=-c -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=gnu99
-LDFLAGS=
+CFLAGS=-c -G -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=gnu99
+LDFLAGS=-G
 
 EXECUTABLE=bin/lab3
-SOURCES=src/main.c
+SOURCES=src/shell.c
 OBJECTS=$(SOURCES:.c=.o)
 
 all: create-bin $(SOURCES) $(EXECUTABLE)
