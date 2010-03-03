@@ -1,7 +1,7 @@
 UNAME := $(SHELL uname)
 
 CC=gcc
-CFLAGS=-c -G -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=gnu99
+CFLAGS=-c -G -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=c99
 LDFLAGS=-G
 
 EXECUTABLE=bin/lab3

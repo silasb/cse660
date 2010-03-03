@@ -11,8 +11,6 @@
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
-char **old_commands[40];
-int history = 0;
 
 void setup(char [], char *[],int *);
 
@@ -34,9 +32,9 @@ int main(void)
   .
   [39] => { 'history' }
   */
-  int i = 0;
-  for(;i < 40; i++)
-    old_commands[i] = (char **)malloc(sizeof(char *) * 80/2+1);
+
+  char *history_h[40][MAX_LINE/2+1];
+  int history = 0;
 
   struct sigaction handler;
   handler.sa_handler = handle_SIGINT;
@@ -60,60 +58,67 @@ int main(void)
     fflush(0);
     setup(inputBuffer, args, &background);       /* get next command */
 
-    // some reason it isn't getting copied
-    old_commands[history++] = args;
-    printf("%s\n", *old_commands[history-1]);
+    int q = 0;
+    for(;args[q] != NULL; q++)
+      history_h[history][q] = strdup(args[q]);
+    history_h[history][q] = NULL;
+
+    history++;
 
     if(strcmp(args[0], "history") == 0)
     {
       int i = 0;
       for(;i < history; i++) {
         printf("[%d] ", i);
-        //int j = 0;
-        printf("%s\n", old_commands[i][0]);
-        /*
-        for(;j < (int)sizeof(old_commands[i]); j++) {
-          printf("%s ", old_commands[i][j]);
-          printf("\n");
-        }
-        */
+        int j = 0;
+        for(; history_h[i][j] != NULL; j++)
+          printf("%s ", history_h[i][j]);
+        printf("\n");
       }
     }
     else if(strcmp(args[0], "exit") == 0)
       exit(0);
+    else if(strcmp(args[0], "cd") == 0) {
+      if(chdir(args[1]) == -1)
+        perror("chdir");
+    }
+    else if(strcmp(args[0], "help") == 0)
+      printf("help is here\n");
+    else {
 
-    pid_t pid;
+      pid_t pid;
 
-    pid = fork();
+      pid = fork();
 
-    if(pid >= 0)
-    {
-      if(pid == 0)
+      if(pid >= 0)
       {
-        int return_code = execvp(args[0], args);
-        if(return_code < 0)
-          printf("%s: command not found\n", args[0]);
-        _exit(return_code);
+        if(pid == 0)
+        {
+          int return_code = execvp(args[0], args);
+          if(return_code < 0)
+            printf("%s: command not found\n", args[0]);
+          _exit(return_code);
+        }
+        else
+        {
+          if(background == 0)
+            wait(NULL);
+          //waitpid(pid, NULL, NULL);
+        }
       }
       else
       {
-        if(background == 0)
-          wait(NULL);
-        //waitpid(pid, NULL, NULL);
+        fprintf(stderr, "Fork failed");
+        exit(-1);
       }
-    }
-    else
-    {
-      fprintf(stderr, "Fork failed");
-      exit(-1);
-    }
 
-    /* the steps are:
-    (1) fork a child process using fork()
-    (2) the child process will invoke execvp()
-    (3) if background == 0, the parent will wait, 
-    otherwise returns to the setup() function. 
-    */
+      /* the steps are:
+      (1) fork a child process using fork()
+      (2) the child process will invoke execvp()
+      (3) if background == 0, the parent will wait, 
+      otherwise returns to the setup() function. 
+      */
+    }
   }
 }
 
