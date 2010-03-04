@@ -12,25 +12,31 @@
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
-char *history_h[40][MAX_LINE/2+1];
+char *history_h[80][MAX_LINE/2+2];
+int background_h[80];
 int history = 0;
 
 struct sigaction handler;
 
-
 int setup(char [], char *[],int *);
 void exec_cmd(char *[], int);
 int find_char(char);
+void insert_history(char *[], int);
 
 void handle_SIGINT()
 {
   printf("\nHistory\n");
   int temp = history-1;
-  for(;temp >= 0; temp--) {
+  int subtracted = history - 10;
+  if(subtracted <= 0)
+    subtracted = 0;
+  for(;temp >= subtracted; temp--) {
     printf("[%d] ", temp);
     int j = 0;
     for(; history_h[temp][j] != NULL; j++)
       printf("%s ", history_h[temp][j]);
+    if(background_h[temp] == 1)
+      printf("%c", '&');
     printf("\n");
   }
   handler.sa_handler = handle_SIGINT;
@@ -63,13 +69,6 @@ int main(void)
       errno = 0;
     else {
 
-      int q = 0;
-      for(;args[q] != NULL; q++)
-        history_h[history][q] = strdup(args[q]);
-      history_h[history][q] = NULL;
-
-      history++;
-
       if(strcmp(args[0], "history") == 0)
       {
         handle_SIGINT();
@@ -80,10 +79,15 @@ int main(void)
           if((last_cmd = find_char(args[1][0])) == -1)
             printf("error: command starting with `%c' not found\n", args[1][0]);
           else
+            background = background_h[last_cmd];
+            insert_history(history_h[last_cmd], background);
             exec_cmd(history_h[last_cmd], background);
         }
-        else
+        else {
+          background = background_h[last_cmd];
+          insert_history(history_h[last_cmd], background);
           exec_cmd(history_h[last_cmd], background);
+        }
       }
       else if(strcmp(args[0], "exit") == 0)
         exit(0);
@@ -92,15 +96,10 @@ int main(void)
           perror("chdir");
       }
       else if(strcmp(args[0], "help") == 0)
-        printf("help is here\n");
+        printf("Help is on the way!\n");
       else {
+        insert_history(args, background);
         exec_cmd(args, background);
-        /* the steps are:
-        (1) fork a child process using fork()
-        (2) the child process will invoke execvp()
-        (3) if background == 0, the parent will wait, 
-        otherwise returns to the setup() function. 
-        */
       }
     }
   }
@@ -123,8 +122,8 @@ int setup(char inputBuffer[], char *args[],int *background)
 
   /* read what the user enters on the command line */
   length = read(STDIN_FILENO, inputBuffer, MAX_LINE);  
+  if(length == 1) return -1;
 
-  printf("hello");
   if(errno == EINTR) return -1;
 
   start = -1;
@@ -198,8 +197,7 @@ void exec_cmd(char *args[], int background)
     else
     {
       if(background == 0)
-        wait(NULL);
-      //waitpid(pid, NULL, NULL);
+        waitpid(0, NULL, 0);
     }
   }
   else
@@ -207,4 +205,15 @@ void exec_cmd(char *args[], int background)
     fprintf(stderr, "Fork failed");
     exit(-1);
   }
+}
+
+void insert_history(char *args[], int background)
+{
+  int q = 0;
+  for(;args[q] != NULL; q++)
+    history_h[history][q] = strdup(args[q]);
+  history_h[history][q] = NULL;
+  background_h[history] = background;
+
+  history++;
 }
