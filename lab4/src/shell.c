@@ -283,7 +283,7 @@ open_history(FILE **fp, char *mode)
 }
 
 void 
-parse_line(char *line, char *hello[], int *background)
+parse_line(char *line, char *return_string[], int *background)
 {
   int i = 0;
   int start = 0;
@@ -292,14 +292,14 @@ parse_line(char *line, char *hello[], int *background)
   for(;i < (int)strlen(line); i++) {
     if(line[i] == ' ') {
       temp[start++] = '\0';
-      hello[count] = strdup(temp);
+      return_string[count] = strdup(temp);
       start = 0;
       count++;
     }
     else if(line[i] == '\n') {
       temp[start++] = '\0';
-      hello[count] = strdup(temp);
-      hello[count+1] = NULL;
+      return_string[count] = strdup(temp);
+      return_string[count+1] = NULL;
     }
     else if(line[i] == '&')
       *background = 1;
@@ -307,7 +307,7 @@ parse_line(char *line, char *hello[], int *background)
       temp[start++] = line[i];
     }
   }
-  hello[count] = NULL;
+  return_string[count] = NULL;
 }
 
 int 
@@ -319,9 +319,9 @@ read_history(FILE **fp)
     fgets(buffer, MAX_LINE + 1, *fp); // grabs newline
     if(feof(*fp))
       continue;
-    char *hello[MAX_LINE/2+1];
-    parse_line(buffer, hello, &background);
-    insert_history(hello, background);
+    char *parsed_line[MAX_LINE/2+1];
+    parse_line(buffer, parsed_line, &background);
+    insert_history(parsed_line, background);
   }
   fclose(*fp);
   return 0;
