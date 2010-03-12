@@ -2,7 +2,7 @@ UNAME := $(SHELL uname)
 
 CC=gcc
 CFLAGS=-c -G -Wall -Werror -Wextra -Wno-parentheses -pedantic -std=gnu99
-LDFLAGS=-G
+LDFLAGS=
 
 EXECUTABLE=bin/lab4
 SOURCES=src/shell.c
