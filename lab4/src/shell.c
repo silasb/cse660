@@ -34,31 +34,11 @@ void insert_history(char *[], int);
 int open_history(FILE **, char *mode);
 int read_history(FILE **);
 void write_history(FILE **);
+void handle_SIGINT();
 
 /* 
  * functions 
  */
-void 
-handle_SIGINT()
-{
-  printf("\nHistory\n");
-  int temp = history-1;
-  int subtracted = history - 10;
-  if(subtracted <= 0)
-    subtracted = 0;
-  for(;temp >= subtracted; temp--) {
-    printf("[%d] ", temp);
-    int j = 0;
-    for(; history_h[temp][j] != NULL; j++)
-      printf("%s ", history_h[temp][j]);
-    if(background_h[temp] == 1)
-      printf("%c", '&');
-    printf("\n");
-  }
-  handler.sa_handler = handle_SIGINT;
-  sigaction(SIGINT, &handler, NULL);
-}
-
 int 
 main(void)
 {
@@ -73,29 +53,29 @@ main(void)
 
   FILE *history_fp;
 
-  int ret_c;
-  if((ret_c = open_history(&history_fp, "r")) == 1) {
+  if(open_history(&history_fp, "r") == 1) {
+    // if history file is present read from it.
     read_history(&history_fp);
   }
   fclose(history_fp);
 
-  /* Program terminates normally inside setup */
   while (1)
   {                  
+    int return_s;
     background = 0;
+
     if((cwd = getcwd(NULL, 64)) == NULL) {
       perror("pwd");
       exit(2);
     }
-
     printf("%s%% ", cwd);
+
     fflush(0);
-    int return_s;
+
     if((return_s = setup(inputBuffer, args, &background)) == -1)       /* get next command */
       errno = 0;
     else if (return_s == 1) {
-      int ret_c;
-      if((ret_c = open_history(&history_fp, "w")) == 2) {
+      if(open_history(&history_fp, "w") == 2) {
         write_history(&history_fp);
       }
       fclose(history_fp);
@@ -123,8 +103,7 @@ main(void)
         }
       }
       else if(strcmp(args[0], "exit") == 0) {
-        int ret_c;
-        if((ret_c = open_history(&history_fp, "w")) == 2) {
+        if(open_history(&history_fp, "w") == 2) {
           write_history(&history_fp);
         }
         fclose(history_fp);
@@ -363,3 +342,25 @@ write_history(FILE **fp)
     fprintf(*fp, "\n");
   }
 }
+
+void 
+handle_SIGINT()
+{
+  printf("\nHistory\n");
+  int temp = history-1;
+  int subtracted = history - 10;
+  if(subtracted <= 0)
+    subtracted = 0;
+  for(;temp >= subtracted; temp--) {
+    printf("[%d] ", temp);
+    int j = 0;
+    for(; history_h[temp][j] != NULL; j++)
+      printf("%s ", history_h[temp][j]);
+    if(background_h[temp] == 1)
+      printf("%c", '&');
+    printf("\n");
+  }
+  handler.sa_handler = handle_SIGINT;
+  sigaction(SIGINT, &handler, NULL);
+}
+
