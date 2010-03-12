@@ -15,8 +15,8 @@
 /* 
  * global variables 
  */
-char *history_h[80][MAX_LINE/2+2];
-int background_h[80];
+char *history_h[255][MAX_LINE/2+2];
+int background_h[255];
 int history = 0;
 
 /*
@@ -88,8 +88,16 @@ int main(void)
 
     printf("%s%% ", cwd);
     fflush(0);
-    if(setup(inputBuffer, args, &background) == -1)       /* get next command */
+    if((ret_c = setup(inputBuffer, args, &background)) == -1)       /* get next command */
       errno = 0;
+    else if (ret_c == 1) {
+      int ret_c;
+      if((ret_c = open_history(&history_fp, "w")) == 2) {
+        write_history(&history_fp);
+      }
+      fclose(history_fp);
+      return 0;
+    }
     else {
 
       if(strcmp(args[0], "history") == 0)
@@ -156,7 +164,7 @@ int setup(char inputBuffer[], char *args[],int *background)
 
   start = -1;
   if (length == 0)
-    exit(0);            /* ^d was entered, end of user command stream */
+    return 1;            /* ^d was entered, end of user command stream */
   if (length < 0){
     perror("error reading the command");
     exit(-1);           /* terminate with error code of -1 */
@@ -209,7 +217,7 @@ int find_char(char x)
 
 void exec_cmd(char *args[], int background)
 {
-  pid_t pid;
+  pid_t pid, w;
 
   pid = fork();
 
@@ -222,10 +230,18 @@ void exec_cmd(char *args[], int background)
         printf("%s: command not found\n", args[0]);
       _exit(return_code);
     }
-    else
+    else // parent
     {
-      if(background == 0)
-        waitpid(0, NULL, 0);
+      if(background != 1) {
+        do
+        {
+          w = waitpid(pid, NULL, 0);
+        } while(w == -1 && errno == EINTR);
+        if(w == -1)
+        {
+          printf("wait for child process failed!\n");
+        }
+      }
     }
   }
   else
