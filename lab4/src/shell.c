@@ -115,9 +115,9 @@ int main(void)
             exec_cmd(history_h[last_cmd], background);
         }
         else {
-          background = background_h[last_cmd];
-          insert_history(history_h[last_cmd], background);
-          exec_cmd(history_h[last_cmd], background);
+          background = background_h[history-1];
+          insert_history(history_h[history-1], background);
+          exec_cmd(history_h[history-1], background);
         }
       }
       else if(strcmp(args[0], "exit") == 0) {
@@ -349,9 +349,9 @@ write_history(FILE **fp)
   for(; history_h[i][0] != NULL; i++) {
     int j = 0;
     for(; history_h[i][j] != NULL; j++)
-      fprintf(*fp, "%s ", history_h[i][j]);
+      fprintf(*fp, "%s", history_h[i][j]);
     if(background_h[i] == 1)
-      fprintf(*fp, "%c", '&');
+      fprintf(*fp, " %c", '&');
     fprintf(*fp, "\n");
   }
 }
