@@ -11,12 +11,13 @@
 #include <errno.h>
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
+#define MAX_HISTORY 10 
 
 /* 
  * global variables 
  */
-char *history_buffer[255][MAX_LINE/2+2];
-int background_buffer[255];
+char *history_buffer[MAX_HISTORY][MAX_LINE/2+2];
+int background_buffer[MAX_HISTORY];
 int history = 0;
 
 /*
@@ -94,9 +95,9 @@ main(void)
             exec_cmd(history_buffer[last_cmd], background);
         }
         else {
-          background = background_buffer[history-1];
-          insert_history(history_buffer[history-1], background);
-          exec_cmd(history_buffer[history-1], background);
+          background = background_buffer[(history-1) % MAX_HISTORY];
+          insert_history(history_buffer[(history-1) % MAX_HISTORY], background);
+          exec_cmd(history_buffer[(history-1) % MAX_HISTORY], background);
         }
       }
       else if(strcmp(args[0], "exit") == 0) {
@@ -189,8 +190,8 @@ find_char(char x)
 {
   int temp = history - 1;
   for(;temp >= 0; temp--)
-    if(history_buffer[temp][0][0] == x)
-      return temp;
+    if(history_buffer[temp % MAX_HISTORY][0][0] == x)
+      return temp % MAX_HISTORY;
   return -1;
 }
 
@@ -236,9 +237,9 @@ insert_history(char *args[], int background)
 {
   int i = 0;
   for(;args[i] != NULL; i++)
-    history_buffer[history][i] = strdup(args[i]);
-  history_buffer[history][i] = NULL;
-  background_buffer[history] = background;
+    history_buffer[history % MAX_HISTORY][i] = strdup(args[i]);
+  history_buffer[history % MAX_HISTORY][i] = NULL;
+  background_buffer[history % MAX_HISTORY] = background;
 
   history++;
 }
@@ -341,14 +342,18 @@ read_history(FILE **fp)
 void
 write_history(FILE **fp)
 {
-  int i = 0;
+  int i;
+  if(history >= MAX_HISTORY)
+    i = history - MAX_HISTORY;
+  else
+    i = 0;
   int j = 0;
 
-  for(; history_buffer[i][0] != NULL; i++) {
+  for(; i < history; i++) {
     j = 0;
-    for(; history_buffer[i][j] != NULL; j++)
-      fprintf(*fp, "%s ", history_buffer[i][j]);
-    if(background_buffer[i] == 1)
+    for(; history_buffer[i % MAX_HISTORY][j] != NULL; j++)
+      fprintf(*fp, "%s ", history_buffer[i % MAX_HISTORY][j]);
+    if(background_buffer[i % MAX_HISTORY] == 1)
       fprintf(*fp, "%c", '&');
     fprintf(*fp, "\n");
   }
@@ -360,8 +365,8 @@ write_history(FILE **fp)
 void 
 handle_SIGINT()
 {
-  int temp = history-1;
-  int subtracted = history - 10;
+  int temp = history - 1;
+  int subtracted = history - MAX_HISTORY;
   int j = 0;
 
   printf("\nHistory\n");
@@ -369,11 +374,11 @@ handle_SIGINT()
   if(subtracted <= 0)
     subtracted = 0;
   for(;temp >= subtracted; temp--) {
-    printf("[%d] ", temp);
+    printf("[%d] ", temp + 1);
     j = 0;
-    for(; history_buffer[temp][j] != NULL; j++)
-      printf("%s ", history_buffer[temp][j]);
-    if(background_buffer[temp] == 1)
+    for(; history_buffer[temp % MAX_HISTORY][j] != NULL; j++)
+      printf("%s ", history_buffer[temp % MAX_HISTORY][j]);
+    if(background_buffer[temp % MAX_HISTORY] == 1)
       printf("%c", '&');
     printf("\n");
   }
