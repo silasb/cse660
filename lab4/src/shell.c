@@ -87,7 +87,7 @@ main(void)
       {
         if(args[1] != NULL) {
           if((last_cmd = find_char(args[1][0])) == -1)
-            printf("error: command starting with `%c' not found\n", args[1][0]);
+            fprintf(stderr, "command starting with `%c' not found\n", args[1][0]);
           else
             background = background_h[last_cmd];
             insert_history(history_h[last_cmd], background);
@@ -207,7 +207,7 @@ exec_cmd(char *args[], int background)
     if(pid == 0) // child
     {
       if((return_code = execvp(args[0], args)) < 0)
-        printf("%s: command not found\n", args[0]);
+        fprintf(stderr, "%s: command not found\n", args[0]);
       _exit(return_code);
     }
     else // parent
@@ -219,7 +219,7 @@ exec_cmd(char *args[], int background)
         } while(w == -1 && errno == EINTR);
         if(w == -1)
         {
-          printf("wait for child process failed!\n");
+          fprintf(stderr, "wait for child process failed!\n");
         }
       }
     }
