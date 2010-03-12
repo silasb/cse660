@@ -88,9 +88,10 @@ int main(void)
 
     printf("%s%% ", cwd);
     fflush(0);
-    if((ret_c = setup(inputBuffer, args, &background)) == -1)       /* get next command */
+    int return_s;
+    if((return_s = setup(inputBuffer, args, &background)) == -1)       /* get next command */
       errno = 0;
-    else if (ret_c == 1) {
+    else if (return_s == 1) {
       int ret_c;
       if((ret_c = open_history(&history_fp, "w")) == 2) {
         write_history(&history_fp);
@@ -99,7 +100,6 @@ int main(void)
       return 0;
     }
     else {
-
       if(strcmp(args[0], "history") == 0)
       {
         handle_SIGINT();
@@ -292,8 +292,7 @@ open_history(FILE **fp, char *mode)
   }
   else {
     if(strcmp(mode, "r") == 0) {
-      fprintf(stderr, "Can't open history %s for mode `%s'\n", history_filename, mode);
-      exit(0);
+      return 0;
     }
   }
 
