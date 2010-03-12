@@ -12,18 +12,32 @@
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 
+/* 
+ * global variables 
+ */
 char *history_h[80][MAX_LINE/2+2];
 int background_h[80];
 int history = 0;
 
+/*
+ * structs 
+ */
 struct sigaction handler;
 
+/* 
+ * prototypes 
+ */
 int setup(char [], char *[],int *);
 void exec_cmd(char *[], int);
 int find_char(char);
 void insert_history(char *[], int);
-FILE * open_history();
+int open_history(FILE **, char *mode);
+int read_history(FILE **);
+void write_history(FILE **);
 
+/* 
+ * functions 
+ */
 void handle_SIGINT()
 {
   printf("\nHistory\n");
@@ -56,7 +70,12 @@ int main(void)
   int last_cmd;
 
   FILE *history_fp;
-  history_fp = open_history();
+
+  int ret_c;
+  if((ret_c = open_history(&history_fp, "r")) == 1) {
+    read_history(&history_fp);
+  }
+  fclose(history_fp);
 
   /* Program terminates normally inside setup */
   while (1)
@@ -93,8 +112,14 @@ int main(void)
           exec_cmd(history_h[last_cmd], background);
         }
       }
-      else if(strcmp(args[0], "exit") == 0)
-        exit(0);
+      else if(strcmp(args[0], "exit") == 0) {
+        int ret_c;
+        if((ret_c = open_history(&history_fp, "w")) == 2) {
+          write_history(&history_fp);
+        }
+        fclose(history_fp);
+        return 0;
+      }
       else if(strcmp(args[0], "cd") == 0) {
         if(chdir(args[1]) == -1)
           perror("chdir");
@@ -114,7 +139,6 @@ int main(void)
  * using whitespace as delimiters. setup() sets the args parameter as a 
  * null-terminated string.
  */
-
 int setup(char inputBuffer[], char *args[],int *background)
 {
   int length, /* # of characters in the command line */
@@ -222,22 +246,97 @@ void insert_history(char *args[], int background)
   history++;
 }
 
-FILE *
-open_history()
+/* Will open the history file and return a file pointer to it
+ * return 1 for successfully open with read
+ * return 2 for successfully open with write
+ * return -1 for error
+ */
+int
+open_history(FILE **fp, char *mode)
 {
-  char *home_dir;
-  if((home_dir = getenv("USER")) == NULL) {
-    fprintf(stderr, "can't get env %s\n", "USER");
+  char *username;
+  char *history_filename;
+
+  if((username = getenv("USER")) == NULL) {
+    fprintf(stderr, "can't get env %s\nPlease set your $USER var.\n", "USER");
     exit(0);
   }
 
-  strcat(home_dir, ".history");
+  history_filename = strdup(username);
 
-  FILE *fp;
-  if((fp = fopen(home_dir, "w")) == NULL) {
-    fprintf(stderr, "Can't open history %s\n", home_dir);
-    exit(0);
+  strcat(history_filename, ".history");
+
+  if((*fp = fopen(history_filename, mode)) != NULL) {
+    if(strcmp(mode, "r") == 0) {
+      return 1;
+    }
+    else if(strcmp(mode, "w") == 0) {
+      return 2;
+    }
+  }
+  else {
+    if(strcmp(mode, "r") == 0) {
+      fprintf(stderr, "Can't open history %s for mode `%s'\n", history_filename, mode);
+      exit(0);
+    }
   }
 
-  return fp;
+  return -1;
+}
+
+void parse_line(char *line, char *hello[], int *background)
+{
+  int i = 0;
+  int start = 0;
+  int count = 0;
+  char temp[80];
+  for(;i < (int)strlen(line); i++) {
+    if(line[i] == ' ') {
+      temp[start++] = '\0';
+      hello[count] = strdup(temp);
+      start = 0;
+      count++;
+    }
+    else if(line[i] == '\n') {
+      temp[start++] = '\0';
+      hello[count] = strdup(temp);
+      hello[count+1] = NULL;
+    }
+    else if(line[i] == '&')
+      *background = 1;
+    else {
+      temp[start++] = line[i];
+    }
+  }
+  hello[count+1] = NULL;
+}
+
+int 
+read_history(FILE **fp)
+{
+  char buffer[MAX_LINE];
+  int background;
+  while(!feof(*fp)) {
+    fgets(buffer, MAX_LINE + 1, *fp); // grabs newline
+    if(feof(*fp))
+      continue;
+    char *hello[MAX_LINE/2+1];
+    parse_line(buffer, hello, &background);
+    insert_history(hello, background);
+  }
+  return 0;
+}
+
+void
+write_history(FILE **fp)
+{
+  int i = 0;
+  for(; history_h[i][0] != NULL; i++) {
+    int j = 0;
+    for(; history_h[i][j] != NULL; j++)
+      fprintf(*fp, "%s ", history_h[i][j]);
+    if(background_h[i] == 1)
+      fprintf(*fp, "%c", '&');
+    fprintf(*fp, "\n");
+  }
 }
