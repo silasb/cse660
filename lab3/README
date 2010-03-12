@@ -1,0 +1,17 @@
+= Lab3
+by Silas Baronda <barondas@cse.ohio-state.edu>
+
+== Compile
+unzip the lab3.zip file with `unzip lab3.zip`
+
+cd into the lab3 directory:
+
+    cd lab3
+
+compile the shell:
+
+    make
+
+run the shell:
+
+    ./bin/lab3
