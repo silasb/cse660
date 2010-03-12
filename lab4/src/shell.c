@@ -38,7 +38,8 @@ void write_history(FILE **);
 /* 
  * functions 
  */
-void handle_SIGINT()
+void 
+handle_SIGINT()
 {
   printf("\nHistory\n");
   int temp = history-1;
@@ -58,7 +59,8 @@ void handle_SIGINT()
   sigaction(SIGINT, &handler, NULL);
 }
 
-int main(void)
+int 
+main(void)
 {
   handler.sa_handler = handle_SIGINT;
   sigaction(SIGINT, &handler, NULL);
@@ -147,7 +149,8 @@ int main(void)
  * using whitespace as delimiters. setup() sets the args parameter as a 
  * null-terminated string.
  */
-int setup(char inputBuffer[], char *args[],int *background)
+int 
+setup(char inputBuffer[], char *args[],int *background)
 {
   int length, /* # of characters in the command line */
       i,      /* loop index for accessing inputBuffer array */
@@ -206,7 +209,8 @@ int setup(char inputBuffer[], char *args[],int *background)
   return 0;
 } 
 
-int find_char(char x)
+int 
+find_char(char x)
 {
   int temp = history - 1;
   for(;temp >= 0; temp--)
@@ -215,7 +219,8 @@ int find_char(char x)
   return -1;
 }
 
-void exec_cmd(char *args[], int background)
+void 
+exec_cmd(char *args[], int background)
 {
   pid_t pid, w;
 
@@ -251,7 +256,8 @@ void exec_cmd(char *args[], int background)
   }
 }
 
-void insert_history(char *args[], int background)
+void 
+insert_history(char *args[], int background)
 {
   int q = 0;
   for(;args[q] != NULL; q++)
@@ -265,6 +271,7 @@ void insert_history(char *args[], int background)
 /* Will open the history file and return a file pointer to it
  * return 1 for successfully open with read
  * return 2 for successfully open with write
+ * return 0 for history file not present
  * return -1 for error
  */
 int
@@ -299,7 +306,8 @@ open_history(FILE **fp, char *mode)
   return -1;
 }
 
-void parse_line(char *line, char *hello[], int *background)
+void 
+parse_line(char *line, char *hello[], int *background)
 {
   int i = 0;
   int start = 0;
