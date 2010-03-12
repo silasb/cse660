@@ -15,8 +15,8 @@
 /* 
  * global variables 
  */
-char *history_h[255][MAX_LINE/2+2];
-int background_h[255];
+char *history_buffer[255][MAX_LINE/2+2];
+int background_buffer[255];
 int history = 0;
 
 /*
@@ -89,14 +89,14 @@ main(void)
           if((last_cmd = find_char(args[1][0])) == -1)
             fprintf(stderr, "command starting with `%c' not found\n", args[1][0]);
           else
-            background = background_h[last_cmd];
-            insert_history(history_h[last_cmd], background);
-            exec_cmd(history_h[last_cmd], background);
+            background = background_buffer[last_cmd];
+            insert_history(history_buffer[last_cmd], background);
+            exec_cmd(history_buffer[last_cmd], background);
         }
         else {
-          background = background_h[history-1];
-          insert_history(history_h[history-1], background);
-          exec_cmd(history_h[history-1], background);
+          background = background_buffer[history-1];
+          insert_history(history_buffer[history-1], background);
+          exec_cmd(history_buffer[history-1], background);
         }
       }
       else if(strcmp(args[0], "exit") == 0) {
@@ -189,7 +189,7 @@ find_char(char x)
 {
   int temp = history - 1;
   for(;temp >= 0; temp--)
-    if(history_h[temp][0][0] == x)
+    if(history_buffer[temp][0][0] == x)
       return temp;
   return -1;
 }
@@ -236,9 +236,9 @@ insert_history(char *args[], int background)
 {
   int i = 0;
   for(;args[i] != NULL; i++)
-    history_h[history][i] = strdup(args[i]);
-  history_h[history][i] = NULL;
-  background_h[history] = background;
+    history_buffer[history][i] = strdup(args[i]);
+  history_buffer[history][i] = NULL;
+  background_buffer[history] = background;
 
   history++;
 }
@@ -344,11 +344,11 @@ write_history(FILE **fp)
   int i = 0;
   int j = 0;
 
-  for(; history_h[i][0] != NULL; i++) {
+  for(; history_buffer[i][0] != NULL; i++) {
     j = 0;
-    for(; history_h[i][j] != NULL; j++)
-      fprintf(*fp, "%s ", history_h[i][j]);
-    if(background_h[i] == 1)
+    for(; history_buffer[i][j] != NULL; j++)
+      fprintf(*fp, "%s ", history_buffer[i][j]);
+    if(background_buffer[i] == 1)
       fprintf(*fp, "%c", '&');
     fprintf(*fp, "\n");
   }
@@ -371,9 +371,9 @@ handle_SIGINT()
   for(;temp >= subtracted; temp--) {
     printf("[%d] ", temp);
     j = 0;
-    for(; history_h[temp][j] != NULL; j++)
-      printf("%s ", history_h[temp][j]);
-    if(background_h[temp] == 1)
+    for(; history_buffer[temp][j] != NULL; j++)
+      printf("%s ", history_buffer[temp][j]);
+    if(background_buffer[temp] == 1)
       printf("%c", '&');
     printf("\n");
   }
