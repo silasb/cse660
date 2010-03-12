@@ -50,7 +50,6 @@ main(void)
   char *args[MAX_LINE/2+1];   /* command line (of 80) has max of 40 arguments */
   char *cwd;
   int last_cmd;
-
   FILE *history_fp;
 
   if(open_history(&history_fp, "r") == 1) {
@@ -199,6 +198,7 @@ void
 exec_cmd(char *args[], int background)
 {
   pid_t pid, w;
+  int return_code;
 
   pid = fork();
 
@@ -206,8 +206,7 @@ exec_cmd(char *args[], int background)
   {
     if(pid == 0) // child
     {
-      int return_code = execvp(args[0], args);
-      if(return_code < 0)
+      if((return_code = execvp(args[0], args)) < 0)
         printf("%s: command not found\n", args[0]);
       _exit(return_code);
     }
@@ -235,10 +234,10 @@ exec_cmd(char *args[], int background)
 void 
 insert_history(char *args[], int background)
 {
-  int q = 0;
-  for(;args[q] != NULL; q++)
-    history_h[history][q] = strdup(args[q]);
-  history_h[history][q] = NULL;
+  int i = 0;
+  for(;args[i] != NULL; i++)
+    history_h[history][i] = strdup(args[i]);
+  history_h[history][i] = NULL;
   background_h[history] = background;
 
   history++;
@@ -289,6 +288,7 @@ parse_line(char *line, char *return_string[], int *background)
   int start = 0;
   int count = 0;
   char temp[80];
+
   for(;i < (int)strlen(line); i++) {
     if(line[i] == ' ') {
       temp[start++] = '\0';
@@ -307,6 +307,7 @@ parse_line(char *line, char *return_string[], int *background)
       temp[start++] = line[i];
     }
   }
+
   return_string[count] = NULL;
 }
 
@@ -314,15 +315,18 @@ int
 read_history(FILE **fp)
 {
   char buffer[MAX_LINE];
+  char *parsed_line[MAX_LINE/2+1];
+  int background;
+
   while(!feof(*fp)) {
-    int background = 0;
+    background = 0;
     fgets(buffer, MAX_LINE + 1, *fp); // grabs newline
     if(feof(*fp))
       continue;
-    char *parsed_line[MAX_LINE/2+1];
     parse_line(buffer, parsed_line, &background);
     insert_history(parsed_line, background);
   }
+
   fclose(*fp);
   return 0;
 }
@@ -331,34 +335,41 @@ void
 write_history(FILE **fp)
 {
   int i = 0;
+  int j = 0;
+
   for(; history_h[i][0] != NULL; i++) {
-    int j = 0;
+    j = 0;
     for(; history_h[i][j] != NULL; j++)
       fprintf(*fp, "%s ", history_h[i][j]);
     if(background_h[i] == 1)
       fprintf(*fp, "%c", '&');
     fprintf(*fp, "\n");
   }
+
   fclose(*fp);
 }
 
 void 
 handle_SIGINT()
 {
-  printf("\nHistory\n");
   int temp = history-1;
   int subtracted = history - 10;
+  int j = 0;
+
+  printf("\nHistory\n");
+
   if(subtracted <= 0)
     subtracted = 0;
   for(;temp >= subtracted; temp--) {
     printf("[%d] ", temp);
-    int j = 0;
+    j = 0;
     for(; history_h[temp][j] != NULL; j++)
       printf("%s ", history_h[temp][j]);
     if(background_h[temp] == 1)
       printf("%c", '&');
     printf("\n");
   }
+
   handler.sa_handler = handle_SIGINT;
   sigaction(SIGINT, &handler, NULL);
 }
