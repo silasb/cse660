@@ -57,7 +57,6 @@ main(void)
     // if history file is present read from it.
     read_history(&history_fp);
   }
-  fclose(history_fp);
 
   while (1)
   {                  
@@ -78,7 +77,6 @@ main(void)
       if(open_history(&history_fp, "w") == 2) {
         write_history(&history_fp);
       }
-      fclose(history_fp);
       return 0;
     }
     else {
@@ -106,7 +104,6 @@ main(void)
         if(open_history(&history_fp, "w") == 2) {
           write_history(&history_fp);
         }
-        fclose(history_fp);
         return 0;
       }
       else if(strcmp(args[0], "cd") == 0) {
@@ -326,6 +323,7 @@ read_history(FILE **fp)
     parse_line(buffer, hello, &background);
     insert_history(hello, background);
   }
+  fclose(*fp);
   return 0;
 }
 
@@ -336,11 +334,12 @@ write_history(FILE **fp)
   for(; history_h[i][0] != NULL; i++) {
     int j = 0;
     for(; history_h[i][j] != NULL; j++)
-      fprintf(*fp, "%s", history_h[i][j]);
+      fprintf(*fp, "%s ", history_h[i][j]);
     if(background_h[i] == 1)
-      fprintf(*fp, " %c", '&');
+      fprintf(*fp, "%c", '&');
     fprintf(*fp, "\n");
   }
+  fclose(*fp);
 }
 
 void 
