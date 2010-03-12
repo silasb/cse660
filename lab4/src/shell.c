@@ -281,6 +281,9 @@ open_history(FILE **fp, char *mode)
   return -1;
 }
 
+/* parses a line and returns a the parsed string as return_string and
+ * background.
+ */
 void 
 parse_line(char *line, char *return_string[], int *background)
 {
@@ -311,6 +314,9 @@ parse_line(char *line, char *return_string[], int *background)
   return_string[count] = NULL;
 }
 
+/* read history from history file and then append history to our history
+ * buffer
+ */
 int 
 read_history(FILE **fp)
 {
@@ -331,6 +337,7 @@ read_history(FILE **fp)
   return 0;
 }
 
+/* write the history buffer to a file */
 void
 write_history(FILE **fp)
 {
@@ -349,6 +356,7 @@ write_history(FILE **fp)
   fclose(*fp);
 }
 
+/* handle the ^c combo to print history */
 void 
 handle_SIGINT()
 {
