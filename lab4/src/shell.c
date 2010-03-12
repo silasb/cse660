@@ -307,15 +307,15 @@ parse_line(char *line, char *hello[], int *background)
       temp[start++] = line[i];
     }
   }
-  hello[count+1] = NULL;
+  hello[count] = NULL;
 }
 
 int 
 read_history(FILE **fp)
 {
   char buffer[MAX_LINE];
-  int background;
   while(!feof(*fp)) {
+    int background = 0;
     fgets(buffer, MAX_LINE + 1, *fp); // grabs newline
     if(feof(*fp))
       continue;
